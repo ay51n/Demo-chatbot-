@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot Interface</title>
+    <style>
+        body { font-family: Arial, sans-serif; display: flex; justify-content: center; height: 100vh; margin: 0; }
+        #chat-container { width: 350px; padding: 20px; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        #chat-box { overflow-y: auto; height: 300px; border: 1px solid #ccc; margin-bottom: 10px; padding: 5px; background: #f9f9f9; }
+        input, button { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; }
+        button { background: #0056b3; color: white; cursor: pointer; }
+        button:hover { background: #003580; }
+    </style>
+</head>
+<body>
+    <div id="chat-container">
+        <div id="chat-box"></div>
+        <input type="text" id="user-input" placeholder="Type your message...">
+        <input type="text" id="address-input" placeholder="Enter your address...">
+        <button onclick="sendMessage()">Send</button>
+        <button onclick="startNewConversation()">Start New Conversation</button>
+    </div>
+
+    <script>
+        let senderId = null;
+
+        function sendMessage() {
+            const message = document.getElementById('user-input').value;
+            const address = document.getElementById('address-input').value;
+            if (!message) return;
+
+            if (!senderId) { startNewConversation(); return; }
+
+            const data = `message=${message}&sender_id=${senderId}&address=${address}`;
+            fetch('/send_message', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: data
+            })
+            .then(response => response.json())
+            .then(data => {
+                updateChatBox('You', message);
+                updateChatBox('Bot', data.message);
+                senderId = data.sender_id;
+            });
+        }
+
+        function startNewConversation() {
+            const address = document.getElementById('address-input').value;
+            fetch(`/new_conversation?address=${address}`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('chat-box').innerHTML = '<p>New conversation started. Type your message below.</p>';
+                senderId = data.sender_id;
+            });
+        }
+
+        function updateChatBox(speaker, text) {
+            const chatBox = document.getElementById('chat-box');
+            chatBox.innerHTML += `<p><strong>${speaker}:</strong> ${text}</p>`;
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+    </script>
+</body>
+</html>
